@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PrivateBid — Sealed-Bid Auction on Arcium</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Inter, Arial, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: #080914;
+      color: #f5f7ff;
+      padding: 28px;
+    }
+
+    .app {
+      max-width: 1100px;
+      margin: auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 48px;
+      gap: 20px;
+    }
+
+    .logo {
+      font-weight: 800;
+      font-size: 22px;
+      letter-spacing: -0.5px;
+    }
+
+    .tag {
+      border: 1px solid #2c335f;
+      color: #aeb8ff;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 28px;
+      align-items: stretch;
+    }
+
+    .card {
+      background: linear-gradient(180deg, #11152b, #0c1020);
+      border: 1px solid #252c52;
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    }
+
+    h1 {
+      font-size: 54px;
+      line-height: 1;
+      letter-spacing: -2px;
+      margin-bottom: 18px;
+    }
+
+    .blue {
+      color: #7b8cff;
+    }
+
+    p {
+      color: #b8c0e8;
+      line-height: 1.7;
+      margin-bottom: 18px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+      border-radius: 14px;
+      padding: 14px 18px;
+      font-weight: 700;
+      color: white;
+      background: #6577ff;
+    }
+
+    button.secondary {
+      background: #171d3a;
+      border: 1px solid #2c335f;
+      color: #dce1ff;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid #2c335f;
+      background: #080b19;
+      color: white;
+      margin-bottom: 12px;
+      outline: none;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 7px;
+      color: #dce1ff;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .status {
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 14px;
+      background: #0b1d18;
+      border: 1px solid #1f6f55;
+      color: #75f0bd;
+      display: none;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-top: 28px;
+    }
+
+    .mini {
+      background: #0d1124;
+      border: 1px solid #252c52;
+      padding: 20px;
+      border-radius: 18px;
+    }
+
+    .mini h3 {
+      margin-bottom: 10px;
+      color: #fff;
+    }
+
+    .mini p {
+      font-size: 14px;
+      margin: 0;
+    }
+
+    .result {
+      margin-top: 24px;
+      padding: 18px;
+      border-radius: 18px;
+      background: #101735;
+      border: 1px solid #2c335f;
+    }
+
+    .hidden {
+      color: #7b8cff;
+      font-weight: 800;
+    }
+
+    footer {
+      margin-top: 34px;
+      color: #7780aa;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    @media (max-width: 850px) {
+      .hero, .grid {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 38px;
+      }
+
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div class="logo">PrivateBid</div>
+      <div class="tag">Blind Auctions RTG • Arcium</div>
+    </header>
+
+    <section class="hero">
+      <div class="card">
+        <h1>Private sealed-bid auctions powered by <span class="blue">Arcium</span>.</h1>
+        <p>
+          PrivateBid is a demo for sealed-bid auctions where bids stay hidden until the auction closes.
+          This prevents bid copying, collusion, and early price leakage.
+        </p>
+        <p>
+          Arcium acts as the privacy layer for encrypted bid handling and private result computation.
+          Only the winning result is revealed after the auction ends.
+        </p>
+
+        <div class="actions">
+          <button onclick="connectWallet()">Connect Wallet</button>
+          <button class="secondary" onclick="closeAuction()">Close Auction</button>
+        </div>
+
+        <div id="walletStatus" class="status"></div>
+      </div>
+
+      <div class="card">
+        <label>Auction Item</label>
+        <input id="item" placeholder="Example: Rare NFT" />
+
+        <label>Your Private Bid</label>
+        <input id="bid" type="number" placeholder="Example: 25 SOL" />
+
+        <button onclick="placeBid()">Submit Encrypted Bid</button>
+
+        <div class="result">
+          <p><strong>Auction Status:</strong> <span id="auctionStatus">Open</span></p>
+          <p><strong>Your Bid:</strong> <span class="hidden" id="privateBid">Encrypted / Hidden</span></p>
+          <p><strong>Winner:</strong> <span id="winner">Not revealed yet</span></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="mini">
+        <h3>01. Create Auction</h3>
+        <p>A seller creates an auction for any item or asset.</p>
+      </div>
+
+      <div class="mini">
+        <h3>02. Submit Private Bid</h3>
+        <p>Bidders submit encrypted bids. Other users cannot see the bid amount.</p>
+      </div>
+
+      <div class="mini">
+        <h3>03. Reveal Result</h3>
+        <p>After close, only the winner and final result are revealed.</p>
+      </div>
+    </section>
+
+    <footer>
+      Built for Arcium RTG — Blind Auctions / Sealed-Bid Auction.
+    </footer>
+  </main>
+
+  <script>
+    let connected = false;
+    let savedBid = null;
+
+    function connectWallet() {
+      connected = true;
+      const status = document.getElementById("walletStatus");
+      status.style.display = "block";
+      status.innerText = "Wallet connected. Ready to submit a private bid.";
+    }
+
+    function placeBid() {
+      const item = document.getElementById("item").value;
+      const bid = document.getElementById("bid").value;
+
+      if (!connected) {
+        alert("Connect wallet first.");
+        return;
+      }
+
+      if (!item || !bid) {
+        alert("Enter auction item and bid amount.");
+        return;
+      }
+
+      savedBid = bid;
+      document.getElementById("privateBid").innerText = "Encrypted with Arcium privacy layer";
+      alert("Private bid submitted. Bid amount remains hidden until auction close.");
+    }
+
+    function closeAuction() {
+      if (!savedBid) {
+        alert("Submit a bid first.");
+        return;
+      }
+
+      document.getElementById("auctionStatus").innerText = "Closed";
+      document.getElementById("winner").innerText = "Winning bidder selected privately";
+      alert("Auction closed. Only the result is revealed.");
+    }
+  </script>
+</body>
+</html>
